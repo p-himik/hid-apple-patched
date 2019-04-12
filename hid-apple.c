@@ -66,6 +66,12 @@ MODULE_PARM_DESC(swap_fn_ejectcd, "Swap the Fn and Eject-CD keys, making fn inse
 		"(For people who need insert. "
 		"[0] = as-is, Mac layout, 1 = swapped)");
 
+static unsigned int alupckeys;
+module_param(alupckeys, uint, 0644);
+MODULE_PARM_DESC(alupckeys, "Emulate PC keys (PrtSc, Scroll Lock, Pause, Num Lock). "
+		"(Analogous to the apple:alupckeys config of setxkbmap. "
+		"[0] = as-is, Mac layout, 1 = the option is set)");
+
 static unsigned int rightalt_as_rightctrl;
 module_param(rightalt_as_rightctrl, uint, 0644);
 MODULE_PARM_DESC(rightalt_as_rightctrl, "Use the right Alt key as a right Ctrl key. "
@@ -196,6 +202,13 @@ static const struct apple_key_translation swapped_fn_leftctrl_keys[] = {
 static const struct apple_key_translation swapped_fn_ejectcd_keys[] = {
 	{ KEY_FN, KEY_EJECTCD },
 	{ }
+};
+
+static const struct apple_key_translation alupckeys_keys[] = {
+	{ KEY_F13, KEY_SYSRQ },
+	{ KEY_F14, KEY_SCROLLLOCK },
+	{ KEY_F15, KEY_PAUSE },
+	{ KEY_F16, }
 };
 
 static const struct apple_key_translation rightalt_as_rightctrl_keys[] = {
@@ -337,6 +350,14 @@ static int hidinput_apple_event(struct hid_device *hid, struct input_dev *input,
 
 	if (swap_fn_ejectcd && !swap_fn_leftctrl) {
 		trans = apple_find_translation(swapped_fn_ejectcd_keys, usage->code);
+		if (trans) {
+			input_event(input, usage->type, trans->to, value);
+			return 1;
+		}
+	}
+
+	if (alupckeys) {
+		trans = apple_find_translation(alupckeys_keys, usage->code);
 		if (trans) {
 			input_event(input, usage->type, trans->to, value);
 			return 1;
